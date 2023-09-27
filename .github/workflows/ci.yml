@@ -1,0 +1,83 @@
+name: ci
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+    - "main"
+    - "renovate/lock-file-maintenance"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { rust: [ "1.66", "stable" ] }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy, llvm-tools-preview
+
+      - name: Cache Cargo build files
+        uses: Leafwing-Studios/cargo-cache@v1
+
+      - name: Install Cargo LLVM cov
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-llvm-cov
+
+      - name: Install Cargo nextest
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-nextest
+          version: 0.9.57  # MSRV: 1.66
+
+      - name: Cargo check
+        run: cargo check --all-targets --all-features
+
+      - name: Cargo fmt
+        if: matrix.rust == 'stable'
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy
+        if: matrix.rust == 'stable'
+        run: cargo clippy --all-targets --all-features -- -D warnings --force-warn deprecated --force-warn dead-code
+
+      - name: Cargo doc
+        if: matrix.rust == 'stable'
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --no-deps --all-features
+
+      - name: Run unit tests
+        run: cargo llvm-cov nextest r --lib --lcov --output-path unit-lcov.info
+
+      - name: Run integration tests
+        run: cargo llvm-cov nextest r --test '*' --lcov --output-path it-lcov.info
+
+      - name: Upload unit tests coverage report to codecov
+        uses: codecov/codecov-action@v3
+        if: matrix.rust == 'stable'
+        with:
+          files: unit-lcov.info
+          flags: unit
+
+      - name: Upload integration tests coverage report to codecov
+        uses: codecov/codecov-action@v3
+        if: matrix.rust == 'stable'
+        with:
+          files: it-lcov.info
+          flags: integration

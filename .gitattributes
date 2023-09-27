@@ -1,0 +1,7 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto eol=lf
+
+Cargo.lock binary linguist-generated=true
+
+# Mark all files in the `gen` directory as generated.
+**/gen/** linguist-generated=true
