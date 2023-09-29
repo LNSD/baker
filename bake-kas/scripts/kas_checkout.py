@@ -15,7 +15,7 @@ except ImportError:
     HAVE_COLORLOG = False
 
 
-default_log_level = 'info'
+default_log_level = 'debug'
 
 
 def create_logger():
@@ -40,42 +40,6 @@ def create_logger():
     stream_handler.setFormatter(formatter)
     log.addHandler(stream_handler)
     return logging.getLogger(__name__)
-
-
-class Context:
-    def __init__(self, ctx):
-        self.__kas_work_dir = ctx.kas_work_dir
-        self.__kas_build_dir = ctx.build_dir
-        self.__kas_repo_ref_dir = ctx.kas_repo_ref_dir
-        self.config = None
-
-        self.__force_checkout = ctx.force_checkout
-        self.__update = ctx.update
-        self.__environment = ctx.environment
-
-    @property
-    def build_dir(self):
-        return self.__kas_build_dir
-
-    @property
-    def kas_work_dir(self):
-        return self.__kas_work_dir
-
-    @property
-    def kas_repo_ref_dir(self):
-        return self.__kas_repo_ref_dir
-
-    @property
-    def force_checkout(self):
-        return self.__force_checkout
-
-    @property
-    def update(self):
-        return self.__update
-
-    @property
-    def environ(self):
-        return self.__environment
 
 
 class Config:
@@ -243,19 +207,17 @@ class Config:
 
 
 def kas_checkout(ctx, config, skip=None):
+    # Set the context for the libkas module global variable
+    import kas.context as libkas_context
+    libkas_context.__context__ = ctx
+
+    # Init logging and log kas version
     create_logger()
 
     logging.info('%s %s started', os.path.basename(sys.argv[0]), __version__)
 
-    context = Context(ctx)
-
-    import kas.context as libkas_context
-    libkas_context.__context__ = context
-
-    context.config = Config(config, update=ctx.update)
-
-    level_num = logging.getLevelName("DEBUG")
-    logging.getLogger().setLevel(level_num)
+    # Set up the configuration
+    ctx.config = Config(config, update=ctx.update)
 
     repo_loop = Loop('repo_setup_loop')
     repo_loop.add(SetupReposStep())
@@ -274,4 +236,4 @@ def kas_checkout(ctx, config, skip=None):
     for cmd in setup_commands:
         cmd_name = str(cmd)
         logging.info('execute %s', cmd_name)
-        cmd.execute(context)
+        cmd.execute(ctx)

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use pyo3::{pyclass, pymethods};
+use pyo3::prelude::*;
 
 #[derive(Debug)]
 #[pyclass]
@@ -12,6 +12,16 @@ pub struct KasContext {
     pub force_checkout: Option<bool>,
     pub update: Option<bool>,
     pub environment: BTreeMap<String, String>,
+
+    #[pyo3(get, set)]
+    pub config: Option<Py<PyAny>>,
+
+    // Required by: https://github.com/siemens/kas/blob/4edb347c920467f031f9ec2ddeda23db641a38bd/kas/libcmds.py#L329
+    #[pyo3(get, set)]
+    pub missing_repo_names: Option<Py<PyAny>>,
+    // Required by: https://github.com/siemens/kas/blob/4edb347c920467f031f9ec2ddeda23db641a38bd/kas/libcmds.py#L330
+    #[pyo3(get, set)]
+    pub missing_repo_names_old: Option<Py<PyAny>>,
 }
 
 #[pymethods]
@@ -49,6 +59,11 @@ impl KasContext {
     #[getter]
     fn environment(&self) -> BTreeMap<String, String> {
         self.environment.clone()
+    }
+
+    #[getter]
+    fn environ(&self) -> BTreeMap<String, String> {
+        self.environment()
     }
 }
 
@@ -130,6 +145,10 @@ impl KasContextBuilder {
             force_checkout: self.force_checkout,
             update: self.update,
             environment: self.environment,
+
+            config: None,
+            missing_repo_names: None,
+            missing_repo_names_old: None,
         }
     }
 }
