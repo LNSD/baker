@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use pyo3::prelude::PyModule;
 use pyo3::{Py, PyAny, Python};
 
@@ -52,14 +50,14 @@ pub fn kas_exec(argv: impl Into<Vec<String>>) -> Result<(), String> {
     })
 }
 
-pub fn kas_checkout(ctx: KasContext, config: PathBuf) -> Result<(), String> {
+pub fn kas_checkout(ctx: KasContext) -> Result<(), String> {
     Python::with_gil(|py| -> Result<(), String> {
         let checkout_fn: Py<PyAny> = PyModule::from_code(py, scripts::KAS_CHECKOUT, "", "")
             .unwrap()
             .getattr("kas_checkout")
             .unwrap()
             .into();
-        let result = checkout_fn.call1(py, (ctx, config));
+        let result = checkout_fn.call1(py, (ctx,));
 
         match result {
             Ok(_) => Ok(()),

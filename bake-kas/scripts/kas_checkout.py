@@ -206,7 +206,7 @@ class Config:
         return ' '.join(multiconfigs)
 
 
-def kas_checkout(ctx, config, skip=None):
+def kas_checkout(ctx, skip=None):
     # Set the context for the libkas module global variable
     import kas.context as libkas_context
     libkas_context.__context__ = ctx
@@ -216,9 +216,7 @@ def kas_checkout(ctx, config, skip=None):
 
     logging.info('%s %s started', os.path.basename(sys.argv[0]), __version__)
 
-    # Set up the configuration
-    ctx.config = Config(config, update=ctx.update)
-
+    # Set up the tasks list
     repo_loop = Loop('repo_setup_loop')
     repo_loop.add(SetupReposStep())
 
@@ -233,6 +231,7 @@ def kas_checkout(ctx, config, skip=None):
         WriteBBConfig(),
     ]
 
+    # Execute the tasks
     for cmd in setup_commands:
         cmd_name = str(cmd)
         logging.info('execute %s', cmd_name)

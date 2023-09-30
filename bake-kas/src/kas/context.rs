@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+use crate::kas::KasProjectConfig;
 use pyo3::prelude::*;
 
 #[derive(Debug)]
@@ -13,8 +14,7 @@ pub struct KasContext {
     pub update: Option<bool>,
     pub environment: BTreeMap<String, String>,
 
-    #[pyo3(get, set)]
-    pub config: Option<Py<PyAny>>,
+    pub config: Option<KasProjectConfig>,
 
     // Required by: https://github.com/siemens/kas/blob/4edb347c920467f031f9ec2ddeda23db641a38bd/kas/libcmds.py#L329
     #[pyo3(get, set)]
@@ -65,6 +65,12 @@ impl KasContext {
     fn environ(&self) -> BTreeMap<String, String> {
         self.environment()
     }
+
+    // https://github.com/siemens/kas/blob/4edb347c920467f031f9ec2ddeda23db641a38bd/kas/libcmds.py#L329
+    #[getter]
+    fn config(&self) -> Option<&Py<PyAny>> {
+        self.config.as_ref().and_then(|c| c.get_config())
+    }
 }
 
 pub struct KasContextBuilder {
@@ -74,6 +80,7 @@ pub struct KasContextBuilder {
     force_checkout: Option<bool>,
     update: Option<bool>,
     environment: BTreeMap<String, String>,
+    config: Option<KasProjectConfig>,
 }
 
 impl KasContextBuilder {
@@ -93,7 +100,13 @@ impl KasContextBuilder {
             force_checkout: None,
             update: None,
             environment: BTreeMap::new(),
+            config: None,
         }
+    }
+
+    pub fn with_config(mut self, config: KasProjectConfig) -> Self {
+        self.config = Some(config);
+        self
     }
 
     pub fn with_build_dir(mut self, build_dir: PathBuf) -> Self {
@@ -146,7 +159,7 @@ impl KasContextBuilder {
             update: self.update,
             environment: self.environment,
 
-            config: None,
+            config: self.config,
             missing_repo_names: None,
             missing_repo_names_old: None,
         }
