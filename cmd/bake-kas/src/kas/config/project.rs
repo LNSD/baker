@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::convert::Infallible;
 use std::str::FromStr;
 
 use serde::Deserializer;
@@ -72,35 +71,13 @@ pub struct Header {
     /// [configuration format changelog](https://kas.readthedocs.io/en/latest/format-changelog.html)
     /// for the format history and the latest available version.
     pub version: String,
-
-    /// A list of configuration files this current file is based on. They are
-    /// merged in order they are stated. So a latter one could overwrite
-    /// settings from previous files. The current file can overwrite settings
-    /// from every included file. An item in this list can have one of two types:
-    #[serde(default)]
-    pub includes: Vec<HeaderInclude>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-pub struct HeaderInclude {
-    /// The id of the repository where the file is located. The repo
-    /// needs to be defined in the `repos` dictionary as `<repo-id>`.
-    pub repo: String,
-
-    /// The path to the file, relative to the root of the specified
-    /// repository.
-    pub file: String,
-}
-
-impl FromStr for HeaderInclude {
-    type Err = Infallible;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            repo: "".to_string(),
-            file: value.to_string(),
-        })
-    }
+    // TODO: Add `includes` support
+    //  /// A list of configuration files this current file is based on. They are
+    //  /// merged in order they are stated. So a latter one could overwrite
+    //  /// settings from previous files. The current file can overwrite settings
+    //  /// from every included file. An item in this list can have one of two types:
+    //  #[serde(default)]
+    //  pub includes: Vec<HeaderInclude>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

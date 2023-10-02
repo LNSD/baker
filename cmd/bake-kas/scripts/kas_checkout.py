@@ -4,8 +4,8 @@ import sys
 
 from kas import __version__
 from kas.includehandler import IncludeHandler, IncludeException
-from kas.libcmds import Loop, SetupReposStep, SetupDir, SetupHome, InitSetupRepos, FinishSetupRepos, \
-    ReposApplyPatches, SetupEnviron, WriteBBConfig
+from kas.libcmds import Loop, SetupReposStep, SetupDir, SetupHome,  FinishSetupRepos, \
+    ReposApplyPatches, SetupEnviron, WriteBBConfig, Command
 from kas.repos import Repo
 
 try:
@@ -206,7 +206,20 @@ class Config:
         return ' '.join(multiconfigs)
 
 
-def kas_checkout(ctx, skip=None):
+class InitSetupRepos(Command):
+    """
+        Prepares setting up repos including the include logic
+    """
+
+    def __str__(self):
+        return 'init_setup_repos'
+
+    def execute(self, ctx):
+        ctx.missing_repo_names = ctx.config.find_missing_repos()
+        ctx.missing_repo_names_old = None
+
+
+def kas_checkout(ctx, cfg, skip=None):
     # Set the context for the libkas module global variable
     import kas.context as libkas_context
     libkas_context.__context__ = ctx
@@ -222,7 +235,7 @@ def kas_checkout(ctx, skip=None):
 
     setup_commands = [
         SetupDir(),
-        SetupHome(),
+        # SetupHome(),
         InitSetupRepos(),
         repo_loop,
         FinishSetupRepos(),

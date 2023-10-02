@@ -1,6 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use pyo3::prelude::*;
+
+use crate::kas::ProjectConfig;
 
 pub(crate) mod project;
 
@@ -39,4 +41,9 @@ impl KasProjectConfig {
             inner: None,
         }
     }
+}
+
+pub fn load_config(config_path: &Path) -> ProjectConfig {
+    let cfg_file = std::fs::File::open(config_path).expect("Failed to open config file");
+    serde_yaml::from_reader(cfg_file).expect("Failed to parse config file")
 }
